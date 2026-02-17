@@ -1,0 +1,12 @@
+[submodule "portfolio-frontend"]
+	path = portfolio-frontend
+	url = git@github.com:Nickatak/portfolio.git
+[submodule "portfolio-bff"]
+	path = portfolio-bff
+	url = git@github.com:Nickatak/portfolio-bff.git
+[submodule "portfolio-calendar"]
+	path = portfolio-calendar
+	url = git@github.com:Nickatak/portfolio-calendar.git
+[submodule "notifier_service"]
+	path = notifier_service
+	url = git@github.com:Nickatak/notifier_microservice.git
