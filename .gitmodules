@@ -1,6 +1,6 @@
 [submodule "portfolio-frontend"]
 	path = portfolio-frontend
-	url = git@github.com:Nickatak/portfolio.git
+	url = git@github.com:Nickatak/portfolio-frontend.git
 [submodule "portfolio-bff"]
 	path = portfolio-bff
 	url = git@github.com:Nickatak/portfolio-bff.git
