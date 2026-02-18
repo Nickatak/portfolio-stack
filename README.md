@@ -52,6 +52,10 @@ make local-bff-up
 ```
 
 ```bash
+make local-bff-seed
+```
+
+```bash
 make local-bff-consumer-up
 ```
 
@@ -62,6 +66,11 @@ make local-frontend-up
 5. Optional email worker (Docker):
 ```bash
 make dev-notifier-up
+```
+If you don't have Mailgun/Twilio credentials yet, you can still start the worker
+with the sample env file:
+```bash
+cd notifier_service && NOTIFIER_ENV_FILE=.env.example docker compose up -d worker
 ```
 
 ## Makefile Commands

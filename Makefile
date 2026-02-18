@@ -203,7 +203,13 @@ dev-db-clean:
 # ---------- Notifier Worker ----------
 
 dev-notifier-up:
-	@cd $(NOTIFIER) && docker compose up -d worker
+	@cd $(NOTIFIER) && \
+		if [ ! -f .env ]; then \
+			echo "notifier: .env missing; using .env.example (email won't send without real creds)"; \
+			NOTIFIER_ENV_FILE=.env.example docker compose up -d worker; \
+		else \
+			docker compose up -d worker; \
+		fi
 
 dev-notifier-down:
 	@cd $(NOTIFIER) && docker compose stop worker
