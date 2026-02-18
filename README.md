@@ -72,6 +72,8 @@ with the sample env file:
 ```bash
 cd notifier_service && NOTIFIER_ENV_FILE=.env.example docker compose up -d worker
 ```
+When you do create `notifier_service/.env`, set `NOTIFICATIONS_OWNER_EMAIL` to
+the inbox that should receive appointment notifications.
 
 ## Makefile Commands
 
