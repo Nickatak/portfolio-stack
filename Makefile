@@ -143,9 +143,14 @@ dev-bff-superuser:
 local-bff-up:
 	@cd $(BFF) && make install
 	@cd $(BFF) && DB_HOST=127.0.0.1 \
+		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:3001} \
+		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:3001} \
 		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
 		manage.py migrate
-	@cd $(BFF) && DB_HOST=127.0.0.1 make dev
+	@cd $(BFF) && DB_HOST=127.0.0.1 \
+		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:3001} \
+		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:3001} \
+		make dev
 
 local-bff-down:
 	@echo "bff: stop with Ctrl+C in the terminal running it"
