@@ -25,10 +25,12 @@ make dev-up
 
 This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
 the notifier worker in one shot.
+Port `3001` is reserved for the BFF admin UI.
 
 Then open:
 - `http://localhost:3000/` (frontend)
-- `http://localhost:8001/admin` (BFF admin)
+- `http://localhost:3001/` (BFF admin UI)
+- `http://localhost:8001/` (BFF API)
 
 Seed the BFF once (if you haven't already):
 ```bash
@@ -86,6 +88,10 @@ make local-bff-consumer-up
 
 ```bash
 make local-frontend-up
+```
+
+```bash
+make dev-admin-ui-up
 ```
 
 5. Optional email worker (Docker):
@@ -147,6 +153,17 @@ make local-bff-up-seed
 make local-bff-superuser
 ```
 
+### BFF Admin UI (portfolio-bff)
+
+```bash
+make dev-admin-ui-up
+make dev-admin-ui-down
+make dev-admin-ui-clean
+```
+
+Port reservation:
+- `3001` is reserved for the BFF admin UI in this stack.
+
 ### BFF Kafka Consumer (portfolio-bff)
 
 ```bash
@@ -166,6 +183,7 @@ the docker stack up:
 
 ```bash
 make replace-bff
+make replace-admin-ui
 make replace-consumer
 make replace-calendar
 make replace-frontend
@@ -222,6 +240,7 @@ separate from this portable stack repo.
 
 Expected local ports (for ops reference):
 - Frontend: `3000`
+- BFF Admin UI: `3001` (reserved)
 - BFF API: `8001` (container listens on `8000`)
 - Calendar API: `8002`
 - Kafka (host): `9092` (internal: `19092`)

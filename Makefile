@@ -11,11 +11,12 @@ NOTIFIER := $(ROOT)/notifier_service
 	local-frontend-up local-frontend-down local-frontend-clean \
 	dev-bff-up dev-bff-down dev-bff-clean dev-bff-seed dev-bff-up-seed \
 	dev-bff-superuser \
+	dev-admin-ui-up dev-admin-ui-down dev-admin-ui-clean \
 	local-bff-up local-bff-down local-bff-clean local-bff-seed local-bff-up-seed \
 	local-bff-superuser \
 	dev-bff-consumer-up dev-bff-consumer-down dev-bff-consumer-clean \
 	local-bff-consumer-up local-bff-consumer-down local-bff-consumer-clean \
-	replace-bff replace-consumer replace-calendar replace-frontend replace-notifier \
+	replace-bff replace-admin-ui replace-consumer replace-calendar replace-frontend replace-notifier \
 	dev-calendar-up dev-calendar-down dev-calendar-clean \
 	local-calendar-up local-calendar-down local-calendar-clean \
 	dev-kafka-up dev-kafka-down dev-kafka-clean \
@@ -33,6 +34,7 @@ help:
 	@echo "  dev-frontend-{up,down,clean}           Docker frontend"
 	@echo "  local-frontend-{up,down,clean}         Local frontend"
 	@echo "  dev-bff-{up,down,clean,seed}           Docker BFF (API + MySQL)"
+	@echo "  dev-admin-ui-{up,down,clean}           Docker BFF admin UI"
 	@echo "  local-bff-{up,down,clean,seed}         Local BFF API"
 	@echo "  dev-bff-up-seed / local-bff-up-seed    Convenience start + seed"
 	@echo "  dev-bff-superuser                     Create Django admin user (docker)"
@@ -40,6 +42,7 @@ help:
 	@echo "  dev-bff-consumer-{up,down,clean}       Docker BFF Kafka consumer"
 	@echo "  local-bff-consumer-{up,down,clean}     Local BFF Kafka consumer"
 	@echo "  replace-bff                           Stop docker BFF, run local BFF"
+	@echo "  replace-admin-ui                      Stop docker admin UI, run local admin UI"
 	@echo "  replace-consumer                      Stop docker consumer, run local consumer"
 	@echo "  replace-calendar                      Stop docker calendar, run local calendar"
 	@echo "  replace-frontend                      Stop docker frontend, run local frontend"
@@ -140,6 +143,15 @@ dev-bff-up-seed:
 dev-bff-superuser:
 	@cd $(BFF) && docker compose exec bff python manage.py createsuperuser
 
+dev-admin-ui-up:
+	@cd $(BFF) && docker compose up -d admin-ui
+
+dev-admin-ui-down:
+	@cd $(BFF) && docker compose stop admin-ui
+
+dev-admin-ui-clean:
+	@cd $(BFF) && docker compose rm -sfv admin-ui
+
 local-bff-up:
 	@cd $(BFF) && make install
 	@cd $(BFF) && DB_HOST=127.0.0.1 \
@@ -200,6 +212,11 @@ local-bff-consumer-clean:
 replace-bff:
 	@cd $(BFF) && docker compose stop bff
 	@$(MAKE) local-bff-up
+
+replace-admin-ui:
+	@cd $(BFF) && docker compose stop admin-ui
+	@cd $(BFF) && make admin-install
+	@cd $(BFF) && make admin-dev
 
 replace-consumer:
 	@cd $(BFF) && docker compose stop consumer
