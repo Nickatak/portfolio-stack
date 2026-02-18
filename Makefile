@@ -1,143 +1,223 @@
 SHELL := /bin/bash
 
 ROOT := $(CURDIR)
-PORTFOLIO_FRONTEND := $(ROOT)/portfolio-frontend
+FRONTEND := $(ROOT)/portfolio-frontend
 BFF := $(ROOT)/portfolio-bff
 CALENDAR := $(ROOT)/portfolio-calendar
 NOTIFIER := $(ROOT)/notifier_service
 
-.PHONY: help status frontend-install frontend-dev frontend-build frontend-test \
-	demo-up demo-down demo-logs demo-build \
-	bff-up bff-down bff-logs \
-	calendar-up calendar-down calendar-logs \
-	notifier-up notifier-down notifier-logs \
-	fullstack-local fullstack-local-down \
-	fullstack-docker fullstack-docker-down
+.PHONY: help status nuke \
+	dev-frontend-up dev-frontend-down dev-frontend-clean dev-frontend-seed \
+	local-frontend-up local-frontend-down local-frontend-clean local-frontend-seed \
+	dev-bff-up dev-bff-down dev-bff-clean dev-bff-seed dev-bff-up-seed \
+	local-bff-up local-bff-down local-bff-clean local-bff-seed local-bff-up-seed \
+	dev-bff-consumer-up dev-bff-consumer-down dev-bff-consumer-clean \
+	local-bff-consumer-up local-bff-consumer-down local-bff-consumer-clean \
+	dev-calendar-up dev-calendar-down dev-calendar-clean \
+	local-calendar-up local-calendar-down local-calendar-clean \
+	dev-kafka-up dev-kafka-down dev-kafka-clean \
+	dev-db-up dev-db-down dev-db-clean \
+	dev-notifier-up dev-notifier-down dev-notifier-clean \
+	local-notifier-up local-notifier-down local-notifier-clean
 
 help:
 	@echo "Targets:"
-	@echo "  status           Show git status for all repos"
-	@echo "  frontend-install Install frontend deps"
-	@echo "  frontend-dev     Run Next.js dev server"
-	@echo "  frontend-build   Build Next.js app"
-	@echo "  frontend-test    Run frontend tests"
-	@echo "  demo-build       Build demo image (frontend)"
-	@echo "  demo-up          Run demo stack (frontend)"
-	@echo "  demo-down        Stop demo stack"
-	@echo "  demo-logs        Tail demo stack logs"
-	@echo "  bff-up           Start portfolio-bff (docker compose)"
-	@echo "  bff-down         Stop portfolio-bff (docker compose)"
-	@echo "  bff-logs         Tail portfolio-bff logs"
-	@echo "  calendar-up      Start portfolio-calendar (docker compose)"
-	@echo "  calendar-down    Stop portfolio-calendar (docker compose)"
-	@echo "  calendar-logs    Tail portfolio-calendar logs"
-	@echo "  notifier-up      Start notifier_service kafka + worker"
-	@echo "  notifier-down    Stop notifier_service"
-	@echo "  notifier-logs    Tail notifier_service logs"
-	@echo "  fullstack-local  Run full stack locally in tmux (non-docker app processes)"
-	@echo "  fullstack-local-down  Stop tmux session and local infra containers"
-	@echo "  fullstack-docker Run full stack in Docker (detached)"
-	@echo "  fullstack-docker-down Stop full stack Docker services"
+	@echo "  status                         Show git status for all repos"
+	@echo "  nuke                           Stop containers, remove volumes, reset repo"
+	@echo "  dev-frontend-{up,down,clean,seed}      Docker frontend"
+	@echo "  local-frontend-{up,down,clean,seed}    Local frontend"
+	@echo "  dev-bff-{up,down,clean,seed}           Docker BFF (API + MySQL)"
+	@echo "  local-bff-{up,down,clean,seed}         Local BFF API"
+	@echo "  dev-bff-up-seed / local-bff-up-seed    Convenience start + seed"
+	@echo "  dev-bff-consumer-{up,down,clean}       Docker BFF Kafka consumer"
+	@echo "  local-bff-consumer-{up,down,clean}     Local BFF Kafka consumer"
+	@echo "  dev-calendar-{up,down,clean}           Docker calendar API"
+	@echo "  local-calendar-{up,down,clean}         Local calendar API"
+	@echo "  dev-kafka-{up,down,clean}              Docker Kafka (broker + init)"
+	@echo "  dev-db-{up,down,clean}                 Docker MySQL (BFF)"
+	@echo "  dev-notifier-{up,down,clean}           Docker notifier worker"
+	@echo "  local-notifier-{up,down,clean}         Local notifier worker"
 
 status:
-	@echo "--- portfolio-frontend" && git -C $(PORTFOLIO_FRONTEND) status -sb
+	@echo "--- portfolio-frontend" && git -C $(FRONTEND) status -sb
 	@echo "--- portfolio-bff" && git -C $(BFF) status -sb
 	@echo "--- portfolio-calendar" && git -C $(CALENDAR) status -sb
 	@echo "--- notifier_service" && git -C $(NOTIFIER) status -sb
 
-frontend-install:
-	@cd $(PORTFOLIO_FRONTEND) && make install
+nuke:
+	@if [ "$$NUKE" != "1" ]; then \
+		echo "Refusing to run. Set NUKE=1 to proceed: make nuke NUKE=1"; \
+		exit 1; \
+	fi
+	@echo "Stopping containers and removing volumes..."
+	@cd $(NOTIFIER) && docker compose down --remove-orphans -v || true
+	@cd $(BFF) && docker compose down --remove-orphans -v || true
+	@cd $(CALENDAR) && docker compose down --remove-orphans -v || true
+	@cd $(FRONTEND) && docker compose --env-file .env -f docker-compose.yml down --remove-orphans -v || true
+	@docker rm -f portfolio-calendar >/dev/null 2>&1 || true
+	@echo "Resetting repo and submodules to clean clone state..."
+	@git reset --hard HEAD
+	@git clean -fdx
+	@git submodule foreach --recursive 'git reset --hard HEAD && git clean -fdx'
 
-frontend-dev:
-	@cd $(PORTFOLIO_FRONTEND) && make dev
+# ---------- Frontend ----------
 
-frontend-build:
-	@cd $(PORTFOLIO_FRONTEND) && make build
+dev-frontend-up:
+	@cd $(FRONTEND) && make docker-up
 
-frontend-test:
-	@cd $(PORTFOLIO_FRONTEND) && make test
+dev-frontend-down:
+	@cd $(FRONTEND) && make docker-down
 
-demo-build:
-	@cd $(PORTFOLIO_FRONTEND) && make demo-build
+dev-frontend-clean:
+	@cd $(FRONTEND) && make docker-down
+	@cd $(FRONTEND) && make clean
 
-demo-up:
-	@cd $(PORTFOLIO_FRONTEND) && make demo-up
+dev-frontend-seed:
+	@cd $(FRONTEND) && make env-init prepare-portfolio-data
 
-demo-down:
-	@cd $(PORTFOLIO_FRONTEND) && make demo-down
+local-frontend-up:
+	@cd $(FRONTEND) && make install
+	@cd $(FRONTEND) && make dev
 
-demo-logs:
-	@cd $(PORTFOLIO_FRONTEND) && make demo-logs
+local-frontend-down:
+	@echo "frontend: stop with Ctrl+C in the terminal running it"
 
-bff-up:
-	@cd $(BFF) && docker compose up --build
+local-frontend-clean:
+	@cd $(FRONTEND) && make clean
 
-bff-down:
+local-frontend-seed:
+	@cd $(FRONTEND) && make env-init prepare-portfolio-data
+
+# ---------- BFF ----------
+
+dev-bff-up:
+	@cd $(BFF) && docker compose up -d --build
+	@cd $(BFF) && for i in $$(seq 1 30); do \
+		docker compose exec -T bff python manage.py migrate && break; \
+		sleep 1; \
+	done
+
+dev-bff-down:
 	@cd $(BFF) && docker compose down
 
-bff-logs:
-	@cd $(BFF) && docker compose logs -f
+dev-bff-clean:
+	@cd $(BFF) && docker compose down --remove-orphans -v
 
-calendar-up:
-	@cd $(CALENDAR) && docker compose up --build
+dev-bff-seed:
+	@cd $(BFF) && docker compose exec -T bff python manage.py seed_portfolio_content --reset
 
-calendar-down:
+dev-bff-up-seed:
+	@$(MAKE) dev-bff-up
+	@$(MAKE) dev-bff-seed
+
+local-bff-up:
+	@cd $(BFF) && make install
+	@cd $(BFF) && DB_HOST=127.0.0.1 \
+		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
+		manage.py migrate
+	@cd $(BFF) && DB_HOST=127.0.0.1 make dev
+
+local-bff-down:
+	@echo "bff: stop with Ctrl+C in the terminal running it"
+
+local-bff-clean:
+	@cd $(BFF) && rm -rf .venv db.sqlite3
+	@cd $(BFF) && find . -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
+
+local-bff-seed:
+	@cd $(BFF) && DB_HOST=127.0.0.1 \
+		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
+		manage.py seed_portfolio_content --reset
+
+local-bff-up-seed:
+	@$(MAKE) local-bff-up
+	@$(MAKE) local-bff-seed
+
+# ---------- BFF Consumer ----------
+
+dev-bff-consumer-up:
+	@cd $(BFF) && docker compose up -d --build consumer
+
+dev-bff-consumer-down:
+	@cd $(BFF) && docker compose stop consumer
+
+dev-bff-consumer-clean:
+	@cd $(BFF) && docker compose rm -sfv consumer
+
+local-bff-consumer-up:
+	@cd $(BFF) && DB_HOST=127.0.0.1 KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
+		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
+		manage.py consume_appointments
+
+local-bff-consumer-down:
+	@echo "bff-consumer: stop with Ctrl+C in the terminal running it"
+
+local-bff-consumer-clean:
+	@echo "bff-consumer: no clean step"
+
+# ---------- Calendar ----------
+
+dev-calendar-up:
+	@cd $(CALENDAR) && docker compose up -d --build
+
+dev-calendar-down:
 	@cd $(CALENDAR) && docker compose down
 
-calendar-logs:
-	@cd $(CALENDAR) && docker compose logs -f
+dev-calendar-clean:
+	@cd $(CALENDAR) && docker compose down --remove-orphans -v
 
-notifier-up:
-	@cd $(NOTIFIER) && docker compose up -d kafka kafka-init worker
+local-calendar-up:
+	@cd $(CALENDAR) && \
+		export KAFKA_PRODUCER_ENABLED=true; \
+		export KAFKA_BOOTSTRAP_SERVERS=localhost:9092; \
+		dotnet run
 
-notifier-down:
-	@cd $(NOTIFIER) && docker compose down
+local-calendar-down:
+	@echo "calendar: stop with Ctrl+C in the terminal running it"
 
-notifier-logs:
-	@cd $(NOTIFIER) && docker compose logs -f
+local-calendar-clean:
+	@cd $(CALENDAR) && rm -rf bin obj
 
-fullstack-local:
-	@if ! command -v tmux >/dev/null 2>&1; then \
-		echo "tmux not found. Install tmux or run the manual steps from README.md in separate terminals."; \
-		exit 1; \
-	fi
-	@if tmux has-session -t portfolio-stack 2>/dev/null; then \
-		echo "tmux session 'portfolio-stack' already exists. Run make fullstack-local-down first."; \
-		exit 1; \
-	fi
-	@tmux new-session -d -s portfolio-stack -n infra "cd $(NOTIFIER) && docker compose up -d kafka kafka-init worker; cd $(BFF) && docker compose up -d mysql; echo 'infra up'"
-	@tmux new-window -t portfolio-stack:1 -n calendar "cd $(CALENDAR) && export KAFKA_PRODUCER_ENABLED=true; export KAFKA_BOOTSTRAP_SERVERS=localhost:9092; dotnet run"
-	@tmux new-window -t portfolio-stack:2 -n bff "cd $(BFF) && export DB_HOST=127.0.0.1; make dev"
-	@tmux new-window -t portfolio-stack:3 -n bff-consumer "cd $(BFF) && export DB_HOST=127.0.0.1; export KAFKA_BOOTSTRAP_SERVERS=localhost:9092; if [ -x .venv/bin/python ]; then .venv/bin/python manage.py consume_appointments; else python manage.py consume_appointments; fi"
-	@tmux new-window -t portfolio-stack:4 -n frontend "cd $(PORTFOLIO_FRONTEND) && make dev"
-	@tmux select-window -t portfolio-stack:0
-	@tmux attach -t portfolio-stack
+# ---------- Kafka ----------
 
-fullstack-local-down:
-	@tmux kill-session -t portfolio-stack 2>/dev/null || true
-	@cd $(NOTIFIER) && docker compose down
+dev-kafka-up:
+	@cd $(NOTIFIER) && docker compose up -d kafka kafka-init
+
+dev-kafka-down:
+	@cd $(NOTIFIER) && docker compose stop kafka kafka-init
+
+dev-kafka-clean:
+	@cd $(NOTIFIER) && docker compose down --remove-orphans -v
+
+# ---------- Database (MySQL) ----------
+
+dev-db-up:
+	@cd $(BFF) && docker compose up -d mysql
+
+dev-db-down:
 	@cd $(BFF) && docker compose stop mysql
 
-fullstack-docker:
-	@cd $(NOTIFIER) && docker compose up -d kafka kafka-init worker
-	@cd $(BFF) && docker compose up -d --build
-	@cd $(CALENDAR) && docker build -t portfolio-calendar:local .
-	@docker rm -f portfolio-calendar >/dev/null 2>&1 || true
-	@docker run -d --name portfolio-calendar \
-		--network notifier_service_default \
-		-p 8002:8002 \
-		-e KAFKA_PRODUCER_ENABLED=true \
-		-e KAFKA_BOOTSTRAP_SERVERS=kafka:19092 \
-		-e KAFKA_TOPIC_APPOINTMENTS_CREATED=appointments.created \
-		-e KAFKA_NOTIFY_EMAIL_DEFAULT=true \
-		-e KAFKA_NOTIFY_SMS_DEFAULT=false \
-		-e CONTACT_DEFAULT_PHONE_REGION=US \
-		-e ALLOWED_ORIGINS=http://localhost:3000 \
-		portfolio-calendar:local
-	@cd $(PORTFOLIO_FRONTEND) && docker compose --env-file .env -f docker-compose.yml up -d --build
+dev-db-clean:
+	@cd $(BFF) && docker compose rm -sfv mysql
 
-fullstack-docker-down:
-	@cd $(PORTFOLIO_FRONTEND) && docker compose --env-file .env -f docker-compose.yml down --remove-orphans
-	@docker rm -f portfolio-calendar >/dev/null 2>&1 || true
-	@cd $(BFF) && docker compose down --remove-orphans
-	@cd $(NOTIFIER) && docker compose down
+# ---------- Notifier Worker ----------
+
+dev-notifier-up:
+	@cd $(NOTIFIER) && docker compose up -d worker
+
+dev-notifier-down:
+	@cd $(NOTIFIER) && docker compose stop worker
+
+dev-notifier-clean:
+	@cd $(NOTIFIER) && docker compose rm -sfv worker
+
+local-notifier-up:
+	@cd $(NOTIFIER) && python3 scripts/run_kafka_email_worker.py
+
+local-notifier-down:
+	@echo "notifier: stop with Ctrl+C in the terminal running it"
+
+local-notifier-clean:
+	@cd $(NOTIFIER) && find . -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
+
+.DEFAULT_GOAL := help
