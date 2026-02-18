@@ -123,10 +123,6 @@ local-frontend-clean:
 
 dev-bff-up:
 	@cd $(BFF) && docker compose up -d --build
-	@cd $(BFF) && for i in $$(seq 1 30); do \
-		docker compose exec -T bff python manage.py migrate && break; \
-		sleep 1; \
-	done
 
 dev-bff-down:
 	@cd $(BFF) && docker compose down
