@@ -34,6 +34,8 @@ Seed the BFF once (if you haven't already):
 ```bash
 make dev-bff-seed
 ```
+If you keep private content in an ops repo at `../ntakemori-deploy/portfolio-content.json`,
+the seed command will use it automatically (no extra flags needed).
 
 Stop everything:
 ```bash
@@ -71,6 +73,8 @@ make local-bff-up
 ```bash
 make local-bff-seed
 ```
+If you keep private content in an ops repo at `../ntakemori-deploy/portfolio-content.json`,
+the seed command will use it automatically (no extra flags needed).
 
 ```bash
 make local-bff-superuser
