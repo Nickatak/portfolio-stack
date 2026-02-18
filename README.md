@@ -26,6 +26,10 @@ make dev-up
 This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
 the notifier worker in one shot.
 
+Then open:
+- `http://localhost:3000/` (frontend)
+- `http://localhost:8001/admin` (BFF admin)
+
 Seed the BFF once (if you haven't already):
 ```bash
 make dev-bff-seed
