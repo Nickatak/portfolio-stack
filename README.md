@@ -78,6 +78,8 @@ cd notifier_service && NOTIFIER_ENV_FILE=.env.example docker compose up -d worke
 ```
 When you do create `notifier_service/.env`, set `NOTIFICATIONS_OWNER_EMAIL` to
 the inbox that should receive appointment notifications.
+To actually deliver emails, update all Mailgun settings in `notifier_service/.env`
+(`MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, and `MAILGUN_FROM_EMAIL`).
 
 ## Makefile Commands
 
