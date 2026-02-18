@@ -7,9 +7,10 @@ CALENDAR := $(ROOT)/portfolio-calendar
 NOTIFIER := $(ROOT)/notifier_service
 
 .PHONY: help status nuke dev-up dev-down dev-clean \
-	dev-frontend-up dev-frontend-down dev-frontend-clean dev-frontend-seed \
-	local-frontend-up local-frontend-down local-frontend-clean local-frontend-seed \
+	dev-frontend-up dev-frontend-down dev-frontend-clean \
+	local-frontend-up local-frontend-down local-frontend-clean \
 	dev-bff-up dev-bff-down dev-bff-clean dev-bff-seed dev-bff-up-seed \
+	dev-bff-superuser \
 	local-bff-up local-bff-down local-bff-clean local-bff-seed local-bff-up-seed \
 	local-bff-superuser \
 	dev-bff-consumer-up dev-bff-consumer-down dev-bff-consumer-clean \
@@ -28,11 +29,12 @@ help:
 	@echo "  dev-up                         Start full docker dev stack"
 	@echo "  dev-down                       Stop full docker dev stack"
 	@echo "  dev-clean                      Remove docker dev stack containers/volumes"
-	@echo "  dev-frontend-{up,down,clean,seed}      Docker frontend"
-	@echo "  local-frontend-{up,down,clean,seed}    Local frontend"
+	@echo "  dev-frontend-{up,down,clean}           Docker frontend"
+	@echo "  local-frontend-{up,down,clean}         Local frontend"
 	@echo "  dev-bff-{up,down,clean,seed}           Docker BFF (API + MySQL)"
 	@echo "  local-bff-{up,down,clean,seed}         Local BFF API"
 	@echo "  dev-bff-up-seed / local-bff-up-seed    Convenience start + seed"
+	@echo "  dev-bff-superuser                     Create Django admin user (docker)"
 	@echo "  local-bff-superuser                   Create Django admin user"
 	@echo "  dev-bff-consumer-{up,down,clean}       Docker BFF Kafka consumer"
 	@echo "  local-bff-consumer-{up,down,clean}     Local BFF Kafka consumer"
@@ -101,9 +103,6 @@ dev-frontend-clean:
 	@cd $(FRONTEND) && make docker-down
 	@cd $(FRONTEND) && make clean
 
-dev-frontend-seed:
-	@cd $(FRONTEND) && make env-init prepare-portfolio-data
-
 local-frontend-up:
 	@cd $(FRONTEND) && make install
 	@cd $(FRONTEND) && make dev
@@ -113,9 +112,6 @@ local-frontend-down:
 
 local-frontend-clean:
 	@cd $(FRONTEND) && make clean
-
-local-frontend-seed:
-	@cd $(FRONTEND) && make env-init prepare-portfolio-data
 
 # ---------- BFF ----------
 
@@ -138,6 +134,9 @@ dev-bff-seed:
 dev-bff-up-seed:
 	@$(MAKE) dev-bff-up
 	@$(MAKE) dev-bff-seed
+
+dev-bff-superuser:
+	@cd $(BFF) && docker compose exec bff python manage.py createsuperuser
 
 local-bff-up:
 	@cd $(BFF) && make install

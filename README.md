@@ -101,9 +101,9 @@ make dev-down
 ## Makefile Commands
 
 Each service exposes `up`, `down`, and `clean` with `dev-*` (docker) and/or
-`local-*` (host) prefixes where appropriate. Seed exists only where meaningful.
-Local commands only exist for app processes (frontend, BFF, calendar, notifier
-worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
+`local-*` (host) prefixes where appropriate. Seed commands exist only for the
+BFF. Local commands only exist for app processes (frontend, BFF, calendar,
+notifier worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
 
 ### Stack (Docker)
 
@@ -119,12 +119,10 @@ make dev-clean
 make dev-frontend-up
 make dev-frontend-down
 make dev-frontend-clean
-make dev-frontend-seed
 
 make local-frontend-up
 make local-frontend-down
 make local-frontend-clean
-make local-frontend-seed
 ```
 
 ### BFF API (portfolio-bff)
@@ -135,6 +133,7 @@ make dev-bff-down
 make dev-bff-clean
 make dev-bff-seed
 make dev-bff-up-seed
+make dev-bff-superuser
 
 make local-bff-up
 make local-bff-down
