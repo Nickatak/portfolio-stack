@@ -15,6 +15,7 @@ NOTIFIER := $(ROOT)/notifier_service
 	local-bff-superuser \
 	dev-bff-consumer-up dev-bff-consumer-down dev-bff-consumer-clean \
 	local-bff-consumer-up local-bff-consumer-down local-bff-consumer-clean \
+	replace-bff replace-consumer replace-calendar replace-frontend replace-notifier \
 	dev-calendar-up dev-calendar-down dev-calendar-clean \
 	local-calendar-up local-calendar-down local-calendar-clean \
 	dev-kafka-up dev-kafka-down dev-kafka-clean \
@@ -38,6 +39,11 @@ help:
 	@echo "  local-bff-superuser                   Create Django admin user"
 	@echo "  dev-bff-consumer-{up,down,clean}       Docker BFF Kafka consumer"
 	@echo "  local-bff-consumer-{up,down,clean}     Local BFF Kafka consumer"
+	@echo "  replace-bff                           Stop docker BFF, run local BFF"
+	@echo "  replace-consumer                      Stop docker consumer, run local consumer"
+	@echo "  replace-calendar                      Stop docker calendar, run local calendar"
+	@echo "  replace-frontend                      Stop docker frontend, run local frontend"
+	@echo "  replace-notifier                      Stop docker worker, run local worker"
 	@echo "  dev-calendar-{up,down,clean}           Docker calendar API"
 	@echo "  local-calendar-{up,down,clean}         Local calendar API"
 	@echo "  dev-kafka-{up,down,clean}              Docker Kafka (broker + init)"
@@ -187,6 +193,32 @@ local-bff-consumer-down:
 
 local-bff-consumer-clean:
 	@echo "bff-consumer: no clean step"
+
+# ---------- Bridge (Docker -> Local) ----------
+
+replace-bff:
+	@cd $(BFF) && docker compose stop bff
+	@$(MAKE) local-bff-up
+
+replace-consumer:
+	@cd $(BFF) && docker compose stop consumer
+	@cd $(BFF) && make install
+	@$(MAKE) local-bff-consumer-up
+
+replace-calendar:
+	@cd $(CALENDAR) && docker compose stop calendar-api
+	@$(MAKE) local-calendar-up
+
+replace-frontend:
+	@cd $(FRONTEND) && docker compose --env-file .env -f docker-compose.yml stop web
+	@$(MAKE) local-frontend-up
+
+replace-notifier:
+	@cd $(NOTIFIER) && docker compose stop worker
+	@cd $(NOTIFIER) && \
+		set -a; [ -f .env ] && . ./.env; set +a; \
+		KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
+		python3 scripts/run_kafka_email_worker.py
 
 # ---------- Calendar ----------
 

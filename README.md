@@ -151,6 +151,22 @@ make local-bff-consumer-down
 make local-bff-consumer-clean
 ```
 
+### Bridge (Docker -> Local)
+
+Swap a running docker service for its local process while keeping the rest of
+the docker stack up:
+
+```bash
+make replace-bff
+make replace-consumer
+make replace-calendar
+make replace-frontend
+make replace-notifier
+```
+
+`replace-notifier` loads `notifier_service/.env` and forces
+`KAFKA_BOOTSTRAP_SERVERS=localhost:9092` for the local worker.
+
 ### Calendar API (portfolio-calendar)
 
 ```bash
