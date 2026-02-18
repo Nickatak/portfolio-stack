@@ -6,7 +6,7 @@ BFF := $(ROOT)/portfolio-bff
 CALENDAR := $(ROOT)/portfolio-calendar
 NOTIFIER := $(ROOT)/notifier_service
 
-.PHONY: help status nuke \
+.PHONY: help status nuke dev-up dev-down dev-clean \
 	dev-frontend-up dev-frontend-down dev-frontend-clean dev-frontend-seed \
 	local-frontend-up local-frontend-down local-frontend-clean local-frontend-seed \
 	dev-bff-up dev-bff-down dev-bff-clean dev-bff-seed dev-bff-up-seed \
@@ -25,6 +25,9 @@ help:
 	@echo "Targets:"
 	@echo "  status                         Show git status for all repos"
 	@echo "  nuke                           Stop containers, remove volumes, reset repo"
+	@echo "  dev-up                         Start full docker dev stack"
+	@echo "  dev-down                       Stop full docker dev stack"
+	@echo "  dev-clean                      Remove docker dev stack containers/volumes"
 	@echo "  dev-frontend-{up,down,clean,seed}      Docker frontend"
 	@echo "  local-frontend-{up,down,clean,seed}    Local frontend"
 	@echo "  dev-bff-{up,down,clean,seed}           Docker BFF (API + MySQL)"
@@ -39,6 +42,30 @@ help:
 	@echo "  dev-db-{up,down,clean}                 Docker MySQL (BFF)"
 	@echo "  dev-notifier-{up,down,clean}           Docker notifier worker"
 	@echo "  local-notifier-{up,down,clean}         Local notifier worker"
+
+dev-up:
+	@$(MAKE) dev-kafka-up
+	@$(MAKE) dev-bff-up
+	@$(MAKE) dev-bff-consumer-up
+	@KAFKA_PRODUCER_ENABLED=true KAFKA_BOOTSTRAP_SERVERS=kafka:19092 $(MAKE) dev-calendar-up
+	@$(MAKE) dev-frontend-up
+	@$(MAKE) dev-notifier-up
+
+dev-down:
+	@$(MAKE) dev-notifier-down
+	@$(MAKE) dev-frontend-down
+	@$(MAKE) dev-calendar-down
+	@$(MAKE) dev-bff-consumer-down
+	@$(MAKE) dev-bff-down
+	@$(MAKE) dev-kafka-down
+
+dev-clean:
+	@$(MAKE) dev-notifier-clean
+	@$(MAKE) dev-frontend-clean
+	@$(MAKE) dev-calendar-clean
+	@$(MAKE) dev-bff-consumer-clean
+	@$(MAKE) dev-bff-clean
+	@$(MAKE) dev-kafka-clean
 
 status:
 	@echo "--- portfolio-frontend" && git -C $(FRONTEND) status -sb

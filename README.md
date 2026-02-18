@@ -81,12 +81,37 @@ the inbox that should receive appointment notifications.
 To actually deliver emails, update all Mailgun settings in `notifier_service/.env`
 (`MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, and `MAILGUN_FROM_EMAIL`).
 
+## Quick Docker Dev
+
+One command to run everything in Docker:
+```bash
+make dev-up
+```
+
+Seed the BFF once (if you haven't already):
+```bash
+make dev-bff-seed
+```
+
+Stop everything:
+```bash
+make dev-down
+```
+
 ## Makefile Commands
 
 Each service exposes `up`, `down`, and `clean` with `dev-*` (docker) and/or
 `local-*` (host) prefixes where appropriate. Seed exists only where meaningful.
 Local commands only exist for app processes (frontend, BFF, calendar, notifier
 worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
+
+### Stack (Docker)
+
+```bash
+make dev-up
+make dev-down
+make dev-clean
+```
 
 ### Frontend (portfolio-frontend)
 
