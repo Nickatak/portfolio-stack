@@ -88,6 +88,9 @@ One command to run everything in Docker:
 make dev-up
 ```
 
+This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
+the notifier worker in one shot.
+
 Seed the BFF once (if you haven't already):
 ```bash
 make dev-bff-seed
