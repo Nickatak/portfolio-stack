@@ -16,16 +16,29 @@ Initialize submodules after cloning:
 git submodule update --init --recursive
 ```
 
-## Runbooks
+## Quick Docker Dev
 
-Manual clean run (recommended for first-time setup):
+One command to run everything in Docker:
+```bash
+make dev-up
+```
 
-- `docs/runbooks/fullstack-local-clean.md`
+This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
+the notifier worker in one shot.
+
+Seed the BFF once (if you haven't already):
+```bash
+make dev-bff-seed
+```
+
+Stop everything:
+```bash
+make dev-down
+```
 
 ## Quick Local Dev
 
 Short path for a local dev session (Docker for infra, local for app processes).
-For full details, use the runbook above.
 
 1. Init submodules:
 ```bash
@@ -80,26 +93,6 @@ When you do create `notifier_service/.env`, set `NOTIFICATIONS_OWNER_EMAIL` to
 the inbox that should receive appointment notifications.
 To actually deliver emails, update all Mailgun settings in `notifier_service/.env`
 (`MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, and `MAILGUN_FROM_EMAIL`).
-
-## Quick Docker Dev
-
-One command to run everything in Docker:
-```bash
-make dev-up
-```
-
-This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
-the notifier worker in one shot.
-
-Seed the BFF once (if you haven't already):
-```bash
-make dev-bff-seed
-```
-
-Stop everything:
-```bash
-make dev-down
-```
 
 ## Makefile Commands
 
@@ -202,3 +195,11 @@ make local-notifier-clean
 
 Host-specific deployment lives in `ntakemori-deploy` and is intentionally
 separate from this portable stack repo.
+
+Expected local ports (for ops reference):
+- Frontend: `3000`
+- BFF API: `8001` (container listens on `8000`)
+- Calendar API: `8002`
+- Kafka (host): `9092` (internal: `19092`)
+- MySQL: `3306`
+- Notifier worker: no inbound port
