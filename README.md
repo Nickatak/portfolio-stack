@@ -56,6 +56,10 @@ make local-bff-seed
 ```
 
 ```bash
+make local-bff-superuser
+```
+
+```bash
 make local-bff-consumer-up
 ```
 
