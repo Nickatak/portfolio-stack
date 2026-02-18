@@ -108,6 +108,7 @@ make local-bff-down
 make local-bff-clean
 make local-bff-seed
 make local-bff-up-seed
+make local-bff-superuser
 ```
 
 ### BFF Kafka Consumer (portfolio-bff)

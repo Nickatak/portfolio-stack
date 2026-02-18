@@ -11,6 +11,7 @@ NOTIFIER := $(ROOT)/notifier_service
 	local-frontend-up local-frontend-down local-frontend-clean local-frontend-seed \
 	dev-bff-up dev-bff-down dev-bff-clean dev-bff-seed dev-bff-up-seed \
 	local-bff-up local-bff-down local-bff-clean local-bff-seed local-bff-up-seed \
+	local-bff-superuser \
 	dev-bff-consumer-up dev-bff-consumer-down dev-bff-consumer-clean \
 	local-bff-consumer-up local-bff-consumer-down local-bff-consumer-clean \
 	dev-calendar-up dev-calendar-down dev-calendar-clean \
@@ -29,6 +30,7 @@ help:
 	@echo "  dev-bff-{up,down,clean,seed}           Docker BFF (API + MySQL)"
 	@echo "  local-bff-{up,down,clean,seed}         Local BFF API"
 	@echo "  dev-bff-up-seed / local-bff-up-seed    Convenience start + seed"
+	@echo "  local-bff-superuser                   Create Django admin user"
 	@echo "  dev-bff-consumer-{up,down,clean}       Docker BFF Kafka consumer"
 	@echo "  local-bff-consumer-{up,down,clean}     Local BFF Kafka consumer"
 	@echo "  dev-calendar-{up,down,clean}           Docker calendar API"
@@ -132,6 +134,11 @@ local-bff-seed:
 local-bff-up-seed:
 	@$(MAKE) local-bff-up
 	@$(MAKE) local-bff-seed
+
+local-bff-superuser:
+	@cd $(BFF) && DB_HOST=127.0.0.1 \
+		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
+		manage.py createsuperuser
 
 # ---------- BFF Consumer ----------
 
