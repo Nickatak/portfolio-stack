@@ -20,7 +20,7 @@ git submodule update --init --recursive
 
 One command to run everything in Docker:
 ```bash
-make dev-up
+make docker-up
 ```
 
 This spins up Kafka, MySQL, the BFF + consumer, calendar API, frontend, and
@@ -34,14 +34,14 @@ Then open:
 
 Seed the BFF once (if you haven't already):
 ```bash
-make dev-bff-seed
+make docker-bff-seed
 ```
 If you keep private content in an ops repo at `../ntakemori-deploy/portfolio-content.json`,
 the seed command will use it automatically (no extra flags needed).
 
 Stop everything:
 ```bash
-make dev-down
+make docker-down
 ```
 
 ## Quick Local Dev
@@ -55,12 +55,12 @@ git submodule update --init --recursive
 
 2. Start Kafka (Docker):
 ```bash
-make dev-kafka-up
+make docker-kafka-up
 ```
 
 3. Start MySQL (Docker):
 ```bash
-make dev-db-up
+make docker-db-up
 ```
 
 4. Start local app processes (separate terminals):
@@ -91,12 +91,12 @@ make local-frontend-up
 ```
 
 ```bash
-make dev-admin-ui-up
+make docker-admin-ui-up
 ```
 
 5. Optional email worker (Docker):
 ```bash
-make dev-notifier-up
+make docker-notifier-up
 ```
 If you don't have Mailgun/Twilio credentials yet, you can still start the worker
 with the sample env file:
@@ -110,7 +110,7 @@ To actually deliver emails, update all Mailgun settings in `notifier_service/.en
 
 ## Makefile Commands
 
-Each service exposes `up`, `down`, and `clean` with `dev-*` (docker) and/or
+Each service exposes `up`, `down`, and `clean` with `docker-*` (docker) and/or
 `local-*` (host) prefixes where appropriate. Seed commands exist only for the
 BFF. Local commands only exist for app processes (frontend, BFF, calendar,
 notifier worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
@@ -118,17 +118,17 @@ notifier worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
 ### Stack (Docker)
 
 ```bash
-make dev-up
-make dev-down
-make dev-clean
+make docker-up
+make docker-down
+make docker-clean
 ```
 
 ### Frontend (portfolio-frontend)
 
 ```bash
-make dev-frontend-up
-make dev-frontend-down
-make dev-frontend-clean
+make docker-frontend-up
+make docker-frontend-down
+make docker-frontend-clean
 
 make local-frontend-up
 make local-frontend-down
@@ -138,12 +138,12 @@ make local-frontend-clean
 ### BFF API (portfolio-bff)
 
 ```bash
-make dev-bff-up
-make dev-bff-down
-make dev-bff-clean
-make dev-bff-seed
-make dev-bff-up-seed
-make dev-bff-superuser
+make docker-bff-up
+make docker-bff-down
+make docker-bff-clean
+make docker-bff-seed
+make docker-bff-up-seed
+make docker-bff-superuser
 
 make local-bff-up
 make local-bff-down
@@ -156,9 +156,9 @@ make local-bff-superuser
 ### BFF Admin UI (portfolio-bff)
 
 ```bash
-make dev-admin-ui-up
-make dev-admin-ui-down
-make dev-admin-ui-clean
+make docker-admin-ui-up
+make docker-admin-ui-down
+make docker-admin-ui-clean
 ```
 
 Port reservation:
@@ -167,9 +167,9 @@ Port reservation:
 ### BFF Kafka Consumer (portfolio-bff)
 
 ```bash
-make dev-bff-consumer-up
-make dev-bff-consumer-down
-make dev-bff-consumer-clean
+make docker-bff-consumer-up
+make docker-bff-consumer-down
+make docker-bff-consumer-clean
 
 make local-bff-consumer-up
 make local-bff-consumer-down
@@ -196,9 +196,9 @@ make replace-notifier
 ### Calendar API (portfolio-calendar)
 
 ```bash
-make dev-calendar-up
-make dev-calendar-down
-make dev-calendar-clean
+make docker-calendar-up
+make docker-calendar-down
+make docker-calendar-clean
 
 make local-calendar-up
 make local-calendar-down
@@ -208,25 +208,25 @@ make local-calendar-clean
 ### Kafka (notifier_service)
 
 ```bash
-make dev-kafka-up
-make dev-kafka-down
-make dev-kafka-clean
+make docker-kafka-up
+make docker-kafka-down
+make docker-kafka-clean
 ```
 
 ### Database (MySQL for portfolio-bff)
 
 ```bash
-make dev-db-up
-make dev-db-down
-make dev-db-clean
+make docker-db-up
+make docker-db-down
+make docker-db-clean
 ```
 
 ### Notifier Worker (notifier_service)
 
 ```bash
-make dev-notifier-up
-make dev-notifier-down
-make dev-notifier-clean
+make docker-notifier-up
+make docker-notifier-down
+make docker-notifier-clean
 
 make local-notifier-up
 make local-notifier-down
