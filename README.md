@@ -47,73 +47,53 @@ make docker-down
 ## Quick Local Dev
 
 Short path for a local dev session (Docker for infra, local for app processes).
+All `local-*-up` commands auto-stop their Docker counterpart, so you can freely
+mix and match.
 
 1. Init submodules:
 ```bash
 git submodule update --init --recursive
 ```
 
-2. Start Kafka (Docker):
+2. Start infrastructure (Docker):
 ```bash
 make docker-kafka-up
-```
-
-3. Start MySQL (Docker):
-```bash
 make docker-db-up
 ```
 
-4. Start local app processes (separate terminals):
+3. Start local app processes (separate terminals):
 ```bash
 make local-calendar-up
-```
-
-```bash
 make local-bff-up
-```
-
-```bash
 make local-bff-seed
+make local-bff-superuser   # first time only
+make local-bff-consumer-up
+make local-frontend-up
+make local-admin-ui-up
 ```
 If you keep private content in an ops repo at `../ntakemori-deploy/portfolio-content.json`,
 the seed command will use it automatically (no extra flags needed).
 
+4. Optional email worker:
 ```bash
-make local-bff-superuser
+make local-notifier-up
 ```
-
-```bash
-make local-bff-consumer-up
-```
-
-```bash
-make local-frontend-up
-```
-
-```bash
-make docker-admin-ui-up
-```
-
-5. Optional email worker (Docker):
+Requires `notifier_service/.env` with Mailgun credentials (`MAILGUN_API_KEY`,
+`MAILGUN_DOMAIN`, `MAILGUN_FROM_EMAIL`) and `NOTIFICATIONS_OWNER_EMAIL`.
+Without credentials, use Docker with the sample env instead:
 ```bash
 make docker-notifier-up
 ```
-If you don't have Mailgun/Twilio credentials yet, you can still start the worker
-with the sample env file:
-```bash
-cd notifier_service && NOTIFIER_ENV_FILE=.env.example docker compose up -d worker
-```
-When you do create `notifier_service/.env`, set `NOTIFICATIONS_OWNER_EMAIL` to
-the inbox that should receive appointment notifications.
-To actually deliver emails, update all Mailgun settings in `notifier_service/.env`
-(`MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, and `MAILGUN_FROM_EMAIL`).
 
 ## Makefile Commands
 
-Each service exposes `up`, `down`, and `clean` with `docker-*` (docker) and/or
-`local-*` (host) prefixes where appropriate. Seed commands exist only for the
-BFF. Local commands only exist for app processes (frontend, BFF, calendar,
-notifier worker). Infrastructure (Kafka, MySQL) is docker-only in this stack.
+Every service exposes `up`, `down`, and `clean` targets with `docker-*` and
+`local-*` prefixes. Infrastructure (Kafka, MySQL) is docker-only.
+
+`local-*-up` targets automatically stop the Docker counterpart first, so you
+can switch from Docker to local without a separate step.
+
+Run `make help` for the full command reference.
 
 ### Stack (Docker)
 
@@ -126,28 +106,19 @@ make docker-clean
 ### Frontend (portfolio-frontend)
 
 ```bash
-make docker-frontend-up
-make docker-frontend-down
-make docker-frontend-clean
-
-make local-frontend-up
-make local-frontend-down
-make local-frontend-clean
+make docker-frontend-{up,down,clean}
+make local-frontend-{up,down,clean}
 ```
 
 ### BFF API (portfolio-bff)
 
 ```bash
-make docker-bff-up
-make docker-bff-down
-make docker-bff-clean
+make docker-bff-{up,down,clean}
 make docker-bff-seed
 make docker-bff-up-seed
 make docker-bff-superuser
 
-make local-bff-up
-make local-bff-down
-make local-bff-clean
+make local-bff-{up,down,clean}
 make local-bff-seed
 make local-bff-up-seed
 make local-bff-superuser
@@ -156,81 +127,48 @@ make local-bff-superuser
 ### BFF Admin UI (portfolio-bff)
 
 ```bash
-make docker-admin-ui-up
-make docker-admin-ui-down
-make docker-admin-ui-clean
+make docker-admin-ui-{up,down,clean}
+make local-admin-ui-{up,down,clean}
 ```
 
-Port reservation:
-- `3001` is reserved for the BFF admin UI in this stack.
+Port reservation: `3001` is reserved for the BFF admin UI.
 
 ### BFF Kafka Consumer (portfolio-bff)
 
 ```bash
-make docker-bff-consumer-up
-make docker-bff-consumer-down
-make docker-bff-consumer-clean
-
-make local-bff-consumer-up
-make local-bff-consumer-down
-make local-bff-consumer-clean
+make docker-bff-consumer-{up,down,clean}
+make local-bff-consumer-{up,down,clean}
 ```
-
-### Bridge (Docker -> Local)
-
-Swap a running docker service for its local process while keeping the rest of
-the docker stack up:
-
-```bash
-make replace-bff
-make replace-admin-ui
-make replace-consumer
-make replace-calendar
-make replace-frontend
-make replace-notifier
-```
-
-`replace-notifier` loads `notifier_service/.env` and forces
-`KAFKA_BOOTSTRAP_SERVERS=localhost:9092` for the local worker.
 
 ### Calendar API (portfolio-calendar)
 
 ```bash
-make docker-calendar-up
-make docker-calendar-down
-make docker-calendar-clean
-
-make local-calendar-up
-make local-calendar-down
-make local-calendar-clean
+make docker-calendar-{up,down,clean}
+make local-calendar-{up,down,clean}
 ```
 
-### Kafka (notifier_service)
+### Infrastructure
 
 ```bash
-make docker-kafka-up
-make docker-kafka-down
-make docker-kafka-clean
-```
-
-### Database (MySQL for portfolio-bff)
-
-```bash
-make docker-db-up
-make docker-db-down
-make docker-db-clean
+make docker-kafka-{up,down,clean}
+make docker-db-{up,down,clean}
 ```
 
 ### Notifier Worker (notifier_service)
 
 ```bash
-make docker-notifier-up
-make docker-notifier-down
-make docker-notifier-clean
+make docker-notifier-{up,down,clean}
+make local-notifier-{up,down,clean}
+```
 
-make local-notifier-up
-make local-notifier-down
-make local-notifier-clean
+`local-notifier-up` loads `notifier_service/.env` automatically and sets
+`KAFKA_BOOTSTRAP_SERVERS=localhost:9092`.
+
+### Utilities
+
+```bash
+make status    # git status across all submodules
+make nuke      # full teardown (requires NUKE=1)
 ```
 
 ## Ops Repo
