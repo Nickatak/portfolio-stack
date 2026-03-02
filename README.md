@@ -28,7 +28,7 @@ the notifier worker in one shot.
 Port `3001` is reserved for the BFF admin UI.
 
 Then open:
-- `http://localhost:3000/` (frontend)
+- `http://localhost:3100/` (frontend)
 - `http://localhost:3001/` (BFF admin UI)
 - `http://localhost:8001/` (BFF API)
 
@@ -177,7 +177,7 @@ Host-specific deployment lives in `ntakemori-deploy` and is intentionally
 separate from this portable stack repo.
 
 Expected local ports (for ops reference):
-- Frontend: `3000`
+- Frontend: `3100`
 - BFF Admin UI: `3001` (reserved)
 - BFF API: `8001` (container listens on `8000`)
 - Calendar API: `8002`
