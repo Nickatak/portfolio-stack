@@ -85,6 +85,16 @@ Without credentials, use Docker with the sample env instead:
 make docker-notifier-up
 ```
 
+## Port Assignments
+
+All host-side port defaults live in `ports.env` at the repo root. The Makefile
+includes and exports them so every submodule compose file and local-dev target
+picks them up automatically. Override any value inline:
+
+```bash
+PORTFOLIO_PORT=4000 make docker-frontend-up
+```
+
 ## Makefile Commands
 
 Every service exposes `up`, `down`, and `clean` targets with `docker-*` and
@@ -182,5 +192,5 @@ Expected local ports (for ops reference):
 - BFF API: `8001` (container listens on `8000`)
 - Calendar API: `8002`
 - Kafka (host): `9092` (internal: `19092`)
-- MySQL: `3306`
+- MySQL: `3307` (container listens on `3306`)
 - Notifier worker: no inbound port

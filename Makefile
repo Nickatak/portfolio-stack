@@ -10,6 +10,10 @@ BFF_DC      = cd $(BFF) && docker compose
 CALENDAR_DC = cd $(CALENDAR) && docker compose
 NOTIFIER_DC = cd $(NOTIFIER) && docker compose
 
+-include ports.env
+export PORTFOLIO_PORT PORTFOLIO_BFF_PORT PORTFOLIO_BFF_DB_PORT \
+       PORTFOLIO_BFF_ADMIN_UI_PORT CALENDAR_API_PORT
+
 # ============================================================================
 # HELP
 # ============================================================================
@@ -134,14 +138,14 @@ docker-bff-superuser:
 local-bff-up:
 	@$(BFF_DC) stop bff >/dev/null 2>&1 || true
 	@cd $(BFF) && make install
-	@cd $(BFF) && DB_HOST=127.0.0.1 \
-		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:3001} \
-		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:3001} \
+	@cd $(BFF) && DB_HOST=127.0.0.1 DB_PORT=$(PORTFOLIO_BFF_DB_PORT) \
+		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:$(PORTFOLIO_BFF_ADMIN_UI_PORT)} \
+		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:$(PORTFOLIO_BFF_ADMIN_UI_PORT)} \
 		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
 		manage.py migrate
-	@cd $(BFF) && DB_HOST=127.0.0.1 \
-		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:3001} \
-		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:3001} \
+	@cd $(BFF) && DB_HOST=127.0.0.1 DB_PORT=$(PORTFOLIO_BFF_DB_PORT) \
+		CSRF_TRUSTED_ORIGINS=$${CSRF_TRUSTED_ORIGINS:-http://localhost:$(PORTFOLIO_BFF_ADMIN_UI_PORT)} \
+		ADMIN_UI_ORIGINS=$${ADMIN_UI_ORIGINS:-http://localhost:$(PORTFOLIO_BFF_ADMIN_UI_PORT)} \
 		make local-up
 
 local-bff-down:
@@ -152,7 +156,7 @@ local-bff-clean:
 	@cd $(BFF) && find . -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
 
 local-bff-seed:
-	@cd $(BFF) && DB_HOST=127.0.0.1 \
+	@cd $(BFF) && DB_HOST=127.0.0.1 DB_PORT=$(PORTFOLIO_BFF_DB_PORT) \
 		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
 		manage.py seed_portfolio_content --reset
 
@@ -161,7 +165,7 @@ local-bff-up-seed:
 	@$(MAKE) local-bff-seed
 
 local-bff-superuser:
-	@cd $(BFF) && DB_HOST=127.0.0.1 \
+	@cd $(BFF) && DB_HOST=127.0.0.1 DB_PORT=$(PORTFOLIO_BFF_DB_PORT) \
 		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
 		manage.py createsuperuser
 
@@ -184,7 +188,7 @@ docker-bff-consumer-clean:
 local-bff-consumer-up:
 	@$(BFF_DC) stop consumer >/dev/null 2>&1 || true
 	@cd $(BFF) && make install
-	@cd $(BFF) && DB_HOST=127.0.0.1 KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
+	@cd $(BFF) && DB_HOST=127.0.0.1 DB_PORT=$(PORTFOLIO_BFF_DB_PORT) KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
 		$$( [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3 ) \
 		manage.py consume_appointments
 
