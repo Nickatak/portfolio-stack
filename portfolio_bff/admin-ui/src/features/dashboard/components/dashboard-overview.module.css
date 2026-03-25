@@ -1,0 +1,42 @@
+.title {
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.card:hover {
+  border-color: var(--brand);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cardLabel {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-xs);
+}
+
+.cardDescription {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}

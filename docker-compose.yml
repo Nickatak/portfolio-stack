@@ -1,0 +1,227 @@
+name: portfolio-stack
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "${PORTFOLIO_BFF_DB_PORT:-3307}:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-portfolio_bff}
+      MYSQL_USER: ${DB_USER:-portfolio}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-portfolio}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-portfolio}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  kafka-volume-perms:
+    image: alpine:3.21
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["mkdir -p /kafka-data && chown -R 1000:1000 /kafka-data"]
+    volumes:
+      - kafka_data:/kafka-data
+    restart: "no"
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka-local
+    depends_on:
+      kafka-volume-perms:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:9092,INTERNAL://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://localhost:9092,INTERNAL://kafka:19092,CONTROLLER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    ports:
+      - "127.0.0.1:9092:9092"
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 3 /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-ec"]
+    command: |
+      echo "[INIT] creating topics..."
+      /opt/kafka/bin/kafka-topics.sh \
+        --bootstrap-server kafka:19092 \
+        --create --if-not-exists \
+        --topic appointments.created \
+        --partitions 1 --replication-factor 1
+      /opt/kafka/bin/kafka-topics.sh \
+        --bootstrap-server kafka:19092 \
+        --create --if-not-exists \
+        --topic appointments.created.dlq \
+        --partitions 1 --replication-factor 1
+      echo "[INIT] done."
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # BFF (Django)
+  # ---------------------------------------------------------------------------
+  bff:
+    build:
+      context: ./portfolio_bff
+      dockerfile: Dockerfile
+    ports:
+      - "${PORTFOLIO_BFF_PORT:-8001}:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_NAME: ${DB_NAME:-portfolio_bff}
+      DB_USER: ${DB_USER:-portfolio}
+      DB_PASSWORD: ${DB_PASSWORD:-portfolio}
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,portfolio-bff,bff}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:3001,http://localhost:3101}
+      ADMIN_UI_ORIGINS: ${ADMIN_UI_ORIGINS:-http://localhost:3001}
+      USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST:-}
+      USE_X_FORWARDED_PROTO: ${USE_X_FORWARDED_PROTO:-}
+      BFF_DEV_SUPERUSER_USERNAME: ${BFF_DEV_SUPERUSER_USERNAME:-test@ex.com}
+      BFF_DEV_SUPERUSER_EMAIL: ${BFF_DEV_SUPERUSER_EMAIL:-admin@example.com}
+      BFF_DEV_SUPERUSER_PASSWORD: ${BFF_DEV_SUPERUSER_PASSWORD:-Qweqwe123}
+    command:
+      - sh
+      - -c
+      - |
+          until python manage.py migrate; do
+            echo "waiting for mysql..."
+            sleep 1
+          done
+          python manage.py runserver 0.0.0.0:8000
+
+  consumer:
+    build:
+      context: ./portfolio_bff
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      DB_NAME: ${DB_NAME:-portfolio_bff}
+      DB_USER: ${DB_USER:-portfolio}
+      DB_PASSWORD: ${DB_PASSWORD:-portfolio}
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC_APPOINTMENTS_CREATED: ${KAFKA_TOPIC_APPOINTMENTS_CREATED:-appointments.created}
+      KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-portfolio-bff}
+      KAFKA_AUTO_OFFSET_RESET: ${KAFKA_AUTO_OFFSET_RESET:-latest}
+    command:
+      - sh
+      - -c
+      - |
+          until python manage.py migrate --check; do
+            echo "waiting for migrations..."
+            sleep 1
+          done
+          python manage.py consume_appointments
+
+  admin-ui:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "${PORTFOLIO_BFF_ADMIN_UI_PORT:-3001}:3001"
+    environment:
+      BFF_BASE_URL: http://bff:8000
+      NEXT_PUBLIC_BFF_BASE_URL: ${NEXT_PUBLIC_BFF_BASE_URL:-}
+    volumes:
+      - ./portfolio_bff/admin-ui:/app
+      - admin_ui_node_modules:/app/node_modules
+    command:
+      - sh
+      - -c
+      - npm ci && npm run dev -- --hostname 0.0.0.0
+
+  # ---------------------------------------------------------------------------
+  # Frontend (Next.js)
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ./portfolio_frontend/frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8002}
+        NEXT_PUBLIC_DISPLAY_NAME: ${NEXT_PUBLIC_DISPLAY_NAME:-Nick Takemori}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-nicholasmtakemori@gmail.com}
+    ports:
+      - "${PORTFOLIO_PORT:-3100}:3000"
+    environment:
+      BFF_BASE_URL: http://bff:8000
+
+  # ---------------------------------------------------------------------------
+  # Calendar API (C# .NET 8)
+  # ---------------------------------------------------------------------------
+  calendar-api:
+    build:
+      context: ./portfolio_calendar
+      dockerfile: Dockerfile
+    ports:
+      - "${CALENDAR_API_PORT:-8002}:8002"
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3100}
+      KAFKA_PRODUCER_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC_APPOINTMENTS_CREATED: ${KAFKA_TOPIC_APPOINTMENTS_CREATED:-appointments.created}
+      KAFKA_NOTIFY_EMAIL_DEFAULT: ${KAFKA_NOTIFY_EMAIL_DEFAULT:-true}
+      KAFKA_NOTIFY_SMS_DEFAULT: ${KAFKA_NOTIFY_SMS_DEFAULT:-false}
+      CONTACT_DEFAULT_PHONE_REGION: ${CONTACT_DEFAULT_PHONE_REGION:-US}
+
+  # ---------------------------------------------------------------------------
+  # Notifier (Python email worker)
+  # ---------------------------------------------------------------------------
+  notifier-worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    env_file:
+      - ${NOTIFIER_ENV_FILE:-./worker/.env.example}
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC_APPOINTMENTS_CREATED: ${KAFKA_TOPIC_APPOINTMENTS_CREATED:-appointments.created}
+      KAFKA_TOPIC_APPOINTMENTS_CREATED_DLQ: ${KAFKA_TOPIC_APPOINTMENTS_CREATED_DLQ:-appointments.created.dlq}
+      KAFKA_DLQ_ENABLED: ${KAFKA_DLQ_ENABLED:-true}
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  kafka_data:
+  admin_ui_node_modules:

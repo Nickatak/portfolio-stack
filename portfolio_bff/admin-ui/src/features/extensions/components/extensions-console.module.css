@@ -1,0 +1,33 @@
+.title {
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+
+.panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: var(--space-lg);
+}
+
+.panelTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: var(--space-sm);
+  color: var(--text);
+}
+
+.list li::marker {
+  color: var(--brand);
+}

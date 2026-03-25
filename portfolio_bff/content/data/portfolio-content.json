@@ -1,0 +1,82 @@
+{
+  "site": {
+    "name": "Nick Takemori",
+    "displayName": "Nick Takemori",
+    "contactEmail": "nicholasmtakemori@gmail.com"
+  },
+  "projects": [
+    {
+      "slug": "bill-n-chill",
+      "title": "Bill n' Chill",
+      "description": "A full-stack construction finance platform for residential general contractors, built on immutable audit trails, explicit state machines, and multi-layer enforcement across estimating, invoicing, payments, and vendor billing.",
+      "body": "<h2>The Problem</h2><p>Small-to-mid residential general contractors lose margin and time when scope, cost, and billing changes are tracked in disconnected tools or spreadsheets. They need a system that keeps project scope changes and billing outcomes in sync - from estimate through budget, change orders, invoicing, payments, and accounting export. The financial data needs to be traceable, auditable, and correct at every stage.</p><h2>Core Architecture Decision: Mutable Workflow + Immutable Evidence</h2><p>The central design addresses the necessity of operational mutability from the immutability required for financial audits. Operators can freely edit estimates, invoices, and change orders as part of normal business operations. But every financially relevant change emits an append-only record - <code>EstimateStatusEvent</code>, <code>ChangeOrderSnapshot</code>, <code>VendorBillSnapshot</code>, <code>PaymentRecord</code>, <code>PaymentAllocationRecord</code> - creating a permanent audit trail without freezing normal operations.</p><p>As a naive approach, I made a generic <code>FinancialAuditEvent</code>, but found it to be semantically too broad and extremely inflexible - it couldn't enforce per-domain invariants, had overly wide data exposure, and made replay semantics ambiguous. To address this, I chose to create domain-specific immutable capture models and in doing so modeled the deprecation as a production-grade phased migration: declare &rarr; introduce domain captures &rarr; dual-write &rarr; migrate readers &rarr; shut down writers &rarr; drop table. While it may have been easier to simply delete it, financial audit systems deserve that discipline.</p><h2>Domain Model</h2><p>The system covers seven operational domains: shared operations (customers, projects, cost codes), estimating &amp; scope management, change orders, accounts receivable (invoicing), accounts payable (vendor billing), cash management (payments and allocations), and financial auditing.</p><h3>Canonical Identity: ScopeItem</h3><p><strong>ScopeItem</strong> is a non-customer-facing identity anchor that tracks \"the same work\" across lifecycle artifacts. When an estimate line item becomes a budget line and later appears on an invoice, ScopeItem maintains the lineage. This was a deliberate decision: <code>EstimateLineItem</code> and <code>BudgetLine</code> are context rows, not canonical identity. Directly anchoring invoice lines to mutable estimate/budget rows would over-couple invoice workflows. ScopeItem provides stable lineage without duplicating editable lines.</p><h3>Invoice Lineage</h3><p>Each invoice keeps exactly one canonical <code>InvoiceLine</code> set. Lines can optionally reference <code>ScopeItem</code> directly, but they're not required to reference <code>EstimateLineItem</code> or <code>BudgetLine</code>. Non-scope billing is only allowed through explicit <code>adjustment</code> lines with required reason metadata - no silent free-text exceptions. This is strictness-ready but transition-friendly: future tightening can require <code>scope_item</code> on all scope lines once migration supports it.</p><h2>Lifecycle State Machines</h2><p>Each financial entity follows an explicit state machine with guarded transitions:</p><ul><li><strong>Estimates:</strong> draft &rarr; sent &rarr; approved &rarr; rejected &rarr; void &rarr; archived</li><li><strong>Invoices:</strong> draft &rarr; sent &rarr; partially_paid &rarr; paid &rarr; overdue &rarr; void</li><li><strong>Change Orders:</strong> draft &rarr; pending_approval &rarr; approved | rejected &rarr; void</li><li><strong>Vendor Bills:</strong> draft &rarr; received &rarr; partially_paid &rarr; paid &rarr; void</li></ul><p>Transitions are enforced at three layers: database constraints first (hard invariants that can never be violated), model-level guards second (business rules and lifecycle logic), and view/serializer validation last (user-facing error messages). Financial writes are wrapped in <code>transaction.atomic()</code> to guarantee multiple writes fail/succeed together.</p><h2>Public Approval Workflows</h2><p>Customers can approve or reject estimates, change orders, and invoices through tokenized public links - without creating an account. Each object type has its own decision endpoint with explicit semantics: estimate approval triggers budget conversion, change order approval updates <code>Project.contract_value_current</code> and active budget totals, invoice approval transitions to paid with a financial audit note.</p><p>Decisions are state-gated: an estimate can only be approved from <code>sent</code>, a change order from <code>pending_approval</code>, an invoice from <code>sent</code>/<code>partially_paid</code>/<code>overdue</code>. All decisions write immutable audit events with optional decider metadata (name, email, note) stored as event context, not mutable top-level fields.</p><p>In order to provide fast operational closure via direct public decisions now, I had to accept a tradeoff by deferring token expiry/revocation, anti-abuse controls, and stronger signer assurance (e-sign ceremony + shared-secret verification) until post-MVP. As such, this is not an oversight, but is an explicitly documented known gap.</p><h2>Money-Loop Integrity</h2><p>The project financial summary rolls up contract value, approved change order deltas, invoicing totals, payments received, AP exposure, and outstanding balances. Every dollar is traceable through source transaction paths. When a metric doesn't match, the debugging path is explicit: identify the bucket &rarr; inspect the underlying records and status history. Approval of a change-order automatically adjusts the initially-approved estimate's budget and billing availability.</p><h2>Security Review</h2><p>Security enforcement was built into the system during development, not bolted on after. Three design-level decisions came out of this approach: removing the public project snapshot surface entirely rather than trying to scope down its token exposure, constraining users to a single active organization membership to avoid role ambiguity across groups, and enforcing hard read-only access for the viewer role across all mutating endpoints.</p><h2>Testing</h2><p>Over 19,000 lines of test code across 17 test modules covering lifecycle transitions, audit trail integrity, organization-scoped access, payment allocation correctness, public decision flows, and regression scenarios. Tests are first-class artifacts - they verify correctness, catch regressions, and serve as executable documentation that guides future development.</p><h2>Technical Details</h2><ul><li><strong>Backend:</strong> Django 6 + Django REST Framework</li><li><strong>Frontend:</strong> Next.js 16, React 19, TypeScript, CSS Modules</li><li><strong>Database:</strong> MySQL with transaction-wrapped atomic writes</li><li><strong>Auth:</strong> Multi-tenant RBAC with organization-scoped queries</li><li><strong>Frontend behavior:</strong> Contract-first - UI consumes policy/contract endpoints for state-transition rules rather than duplicating lifecycle logic</li></ul><h2>Scale</h2><p>Built in a focused 16-day sprint: ~21,000 lines of production code, 130 commits, 7 domain modules, and a comprehensive test suite. The velocity came from three things: the project was genuinely fun to build, AI tooling accelerated the routine work, and strict pattern consistency meant every new domain module followed the same source-of-truth conventions - making changes easy instead of scary.</p>",
+      "tags": ["Django 6", "DRF", "Next.js 16", "React 19", "TypeScript", "MySQL"],
+      "link": "https://bnc.ntakemori.com",
+      "github": "",
+      "isFeatured": true,
+      "category": "case-study",
+      "publishedDate": "2026-02-15"
+    },
+    {
+      "slug": "portfolio-stack",
+      "title": "Portfolio Stack",
+      "description": "This site is a polyglot microservices stack - Next.js frontend, Django BFF, C# Calendar API, and a Python Kafka notifier - connected by an event bus with versioned contracts. A separate deployment repository orchestrates everything through Docker Compose. The BFF doubles as my personal operations dashboard.",
+      "body": "<h2>How This Site Works</h2><p>This portfolio is a distributed system running four services across three languages, connected by an Apache Kafka event bus. Every appointment booked through the contact page triggers a real event-driven workflow.</p><h2>Architecture</h2><h3>The Services</h3><ul><li><strong>Frontend</strong> (Next.js 16 / TypeScript) - Server-rendered pages, appointment booking UI with Google OAuth, timezone-aware scheduling. Talks to the BFF for content and the Calendar API for bookings.</li><li><strong>BFF</strong> (Django / Python) - Backend-for-frontend serving portfolio content, persisting appointment events from Kafka, and providing an admin dashboard for content management.</li><li><strong>Calendar API</strong> (C# / .NET 8 Minimal API) - Stateless appointment intake. Validates contact information, normalizes phone numbers to E.164, and publishes <code>appointments.created</code> events to Kafka. No database - intentionally stateless.</li><li><strong>Notifier</strong> (Python + Kafka) - Hosts the Kafka broker (KRaft mode), consumes appointment events, and sends email notifications via Mailgun. Includes dead-letter queue handling and idempotent processing.</li></ul><h3>Event Flow</h3><p>When someone books an appointment:</p><ol><li>The frontend sends the booking to the Calendar API</li><li>The Calendar API validates the request and publishes an <code>appointments.created</code> event to Kafka</li><li>The BFF consumer picks up the event and persists it to MySQL</li><li>The Notifier consumer picks up the same event and sends an email notification</li><li>Failed events route to a dead-letter topic for later inspection</li></ol><h3>Why This Architecture?</h3><p>A single Express app with SendGrid would have gotten the job done. I chose this architecture because I wanted a working system that demonstrates patterns I use professionally - event-driven decoupling, polyglot services, and contract-first integration - rather than just talking about them.</p><p>The Calendar API is C# because the domain (validation, event publishing) fits a minimal API well. The notifier is Python because Kafka consumer libraries are mature and the notification logic is straightforward. Event contracts use JSON Schema validation, versioned in the Calendar repo and consumed by downstream services - schema-first, not code-first.</p><h3>Infrastructure</h3><p>Everything runs via Docker Compose, orchestrated through a separate deployment repository with a Makefile covering development, staging, and production workflows. An Nginx edge proxy handles TLS termination and routing across all hosted sites.</p><h2>Technical Details</h2><ul><li><strong>Messaging:</strong> Apache Kafka (KRaft mode, single broker), topics: <code>appointments.created</code>, <code>appointments.created.dlq</code></li><li><strong>Contracts:</strong> JSON Schema validation, versioned in <code>portfolio-calendar/contracts/</code></li><li><strong>Delivery:</strong> At-least-once semantics, idempotent consumers via <code>event_id + channel</code> deduplication</li><li><strong>Deployment:</strong> Docker Compose for all environments, Nginx edge proxy for production</li></ul>",
+      "tags": ["Next.js 16", "Django", "C# .NET 8", "Kafka", "Docker", "TypeScript"],
+      "link": "",
+      "github": "https://github.com/Nickatak",
+      "isFeatured": true,
+      "category": "open-source",
+      "publishedDate": "2026-03-01"
+    }
+  ],
+  "stats": [],
+  "skills": [
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Python",
+    "Django / DRF",
+    "C# / .NET 8",
+    "REST API Design",
+    "SQL (MySQL)",
+    "Kafka",
+    "Docker",
+    "Git / GitHub",
+    "Tailwind CSS",
+    "Domain Modeling",
+    "Testing (pytest, Jest)"
+  ],
+  "socialLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/Nickatak",
+      "icon": "github"
+    },
+    {
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/in/nicholas-takemori-a8a20913b/",
+      "icon": "linkedin"
+    }
+  ],
+  "contactLinks": [
+    {
+      "icon": "📧",
+      "title": "Email",
+      "description": "nicholasmtakemori@gmail.com",
+      "href": "mailto:nicholasmtakemori@gmail.com"
+    },
+    {
+      "icon": "💼",
+      "title": "LinkedIn",
+      "description": "linkedin.com/in/nicholas-takemori",
+      "href": "https://www.linkedin.com/in/nicholas-takemori-a8a20913b/"
+    },
+    {
+      "icon": "🐙",
+      "title": "GitHub",
+      "description": "github.com/Nickatak",
+      "href": "https://github.com/Nickatak"
+    }
+  ]
+}

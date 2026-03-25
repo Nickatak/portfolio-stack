@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+.vscode
+coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Keep secrets out of build context
+.env*
+!.env.example

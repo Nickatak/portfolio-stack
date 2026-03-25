@@ -1,0 +1,15 @@
+.notice {
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.noticeError {
+  composes: notice;
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: #ffe3e7;
+  font-weight: 600;
+}

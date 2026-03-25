@@ -1,0 +1,16 @@
+name: portfolio-demo
+
+services:
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:${PORTFOLIO_PORT:-3100}
+        NEXT_PUBLIC_DISPLAY_NAME: ${NEXT_PUBLIC_DISPLAY_NAME:-Your Name}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-hello@example.com}
+    environment:
+      DEMO_MODE: ${DEMO_MODE:-true}
+    ports:
+      - "${PORTFOLIO_PORT:-3100}:3000"

@@ -1,0 +1,5 @@
+- Logo broken. (Also, we want this viewer)
+- Invoice email sending isn't working.
+- Public estimate text isn't working.
+- Remove line items for bills.
+- Rough Electrical/Finish Electrical cost codes.

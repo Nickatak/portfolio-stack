@@ -5,3 +5,12 @@
 .vscode/
 Resume (1).pdf
 .claude/
+
+# Build artifacts
+node_modules/
+.next/
+__pycache__/
+*.pyc
+bin/
+obj/
+.venv/

@@ -1,0 +1,20 @@
+.page {
+  padding: var(--space-lg);
+  display: grid;
+  gap: 14px;
+  animation: rise-in 220ms ease-out;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+@media (min-width: 900px) {
+  .page {
+    padding: 28px;
+  }
+}

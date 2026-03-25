@@ -1,0 +1,46 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "title": "Project Title Here",
+      "description": "Add a detailed description of your project. Explain what the project does, what technologies you used, and what problems it solves. Highlight key features and accomplishments.",
+      "tags": ["Technology 1", "Technology 2", "Technology 3"],
+      "link": "/project-link-or-external-url",
+      "github": "https://github.com/yourusername/project-name"
+    },
+    {
+      "id": 2,
+      "title": "Another Project",
+      "description": "Description of your second project. Explain the purpose, technologies used, and any unique challenges you solved.",
+      "tags": ["React", "Node.js", "MongoDB"],
+      "link": "#",
+      "github": "https://github.com/yourusername/project-name"
+    },
+    {
+      "id": 3,
+      "title": "Third Project",
+      "description": "More project details here. You can add as many projects as you want by following this structure.",
+      "tags": ["Next.js", "TypeScript", "PostgreSQL"],
+      "link": "#",
+      "github": "https://github.com/yourusername/project-name"
+    }
+  ],
+  "stats": [
+    {
+      "number": "X+",
+      "label": "Projects Completed",
+      "icon": "🚀"
+    },
+    {
+      "number": "X+",
+      "label": "Happy Clients",
+      "icon": "😊"
+    },
+    {
+      "number": "X+",
+      "label": "Years Experience",
+      "icon": "⏳"
+    }
+  ],
+  "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5", "Skill 6", "Skill 7", "Skill 8"]
+}

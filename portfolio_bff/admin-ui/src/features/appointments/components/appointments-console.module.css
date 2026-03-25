@@ -1,0 +1,166 @@
+.title {
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Day strip ── */
+
+.strip {
+  display: flex;
+  gap: var(--space-sm);
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  -webkit-overflow-scrolling: touch;
+}
+
+.dayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  flex-shrink: 0;
+}
+
+.dayCell:hover {
+  border-color: var(--brand);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dayCellToday {
+  border-color: var(--brand-soft-border);
+  box-shadow: inset 0 0 0 1px var(--brand-soft-border);
+}
+
+.dayCellSelected {
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: var(--on-brand);
+  border-color: transparent;
+}
+
+.dayCellSelected .dayWeekday,
+.dayCellSelected .dayNumber {
+  color: var(--on-brand);
+}
+
+.dayWeekday {
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dayNumber {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dayDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+  margin-top: 1px;
+}
+
+.dayCellSelected .dayDot {
+  background: var(--on-brand);
+}
+
+/* ── Agenda ── */
+
+.agenda {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  animation: rise-in 220ms ease-out;
+}
+
+.cardTime {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.duration {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+.cardContact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.cardPills {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.pill {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-soft);
+  color: var(--text-muted);
+  border: 1px solid var(--brand-soft-border);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pillActive {
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: var(--on-brand);
+  border-color: transparent;
+}
+
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+@media (min-width: 680px) {
+  .strip {
+    flex-wrap: wrap;
+  }
+
+  .card {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: center;
+  }
+}

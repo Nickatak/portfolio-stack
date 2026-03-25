@@ -1,0 +1,23 @@
+name: portfolio-frontend
+
+services:
+  web:
+    build:
+      context: ${PORTFOLIO_CONTEXT:-./frontend}
+      dockerfile: ${PORTFOLIO_DOCKERFILE:-Dockerfile}
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8002}
+        NEXT_PUBLIC_DISPLAY_NAME: ${NEXT_PUBLIC_DISPLAY_NAME:-Your Name}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-hello@example.com}
+    environment:
+      BFF_BASE_URL: ${BFF_BASE_URL:-http://portfolio-bff:8000}
+    ports:
+      - "${PORTFOLIO_PORT:-3100}:3000"
+    networks:
+      - portfolio
+
+networks:
+  portfolio:
+    external: true
+    name: portfolio_net

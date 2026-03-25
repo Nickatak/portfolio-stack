@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nickatak/portfolio-notifier-contracts/schemas/events/appointments.created.schema.json",
+  "title": "appointments.created",
+  "description": "Emitted when a new calendar time slot is created with contact email and/or phone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "notify",
+    "appointment"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt-[0-9a-fA-F-]{36}$"
+    },
+    "event_type": {
+      "const": "appointments.created"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "email",
+        "sms"
+      ],
+      "properties": {
+        "email": {
+          "type": "boolean"
+        },
+        "sms": {
+          "type": "boolean"
+        }
+      }
+    },
+    "appointment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "appointment_id",
+        "user_id",
+        "start_time",
+        "end_time",
+        "duration_minutes"
+      ],
+      "properties": {
+        "appointment_id": {
+          "type": "string",
+          "pattern": "^timeslot-[0-9]+$"
+        },
+        "user_id": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "start_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "time": {
+          "description": "Deprecated alias for start_time maintained for backward compatibility.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone_e164": {
+          "type": "string",
+          "pattern": "^\\+[1-9][0-9]{7,14}$"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "notify": {
+            "properties": {
+              "email": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "email"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "notify": {
+            "properties": {
+              "sms": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "appointment": {
+            "required": [
+              "phone_e164"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
