@@ -1,20 +1,15 @@
 # Portfolio Stack
 
-Parent orchestration repo for the portfolio ecosystem. This repo owns the
-stack-level README/runbooks and wires the service repos together via submodules.
+Polyglot microservices monorepo for my portfolio site. All services live in
+this repo as directories, connected by a Kafka event bus and orchestrated
+through Docker Compose.
 
-## Submodules
+## Services
 
-- `portfolio-frontend` (Next.js frontend)
-- `portfolio-bff` (Django BFF + dashboard)
-- `portfolio-calendar` (C# minimal API producer)
-- `notifier_service` (Kafka broker + notifier worker runtime)
-
-Initialize submodules after cloning:
-
-```bash
-git submodule update --init --recursive
-```
+- `portfolio_frontend/` - Next.js frontend
+- `portfolio_bff/` - Django BFF + admin dashboard
+- `portfolio_calendar/` - C# .NET 8 minimal API (appointment producer)
+- `worker/` - Kafka broker + notifier runtime
 
 ## Quick Docker Dev
 
@@ -50,18 +45,13 @@ Short path for a local dev session (Docker for infra, local for app processes).
 All `local-*-up` commands auto-stop their Docker counterpart, so you can freely
 mix and match.
 
-1. Init submodules:
-```bash
-git submodule update --init --recursive
-```
-
-2. Start infrastructure (Docker):
+1. Start infrastructure (Docker):
 ```bash
 make docker-kafka-up
 make docker-db-up
 ```
 
-3. Start local app processes (separate terminals):
+2. Start local app processes (separate terminals):
 ```bash
 make local-calendar-up
 make local-bff-up
@@ -74,11 +64,11 @@ make local-admin-ui-up
 If you keep private content in an ops repo at `../ntakemori-deploy/portfolio-content.json`,
 the seed command will use it automatically (no extra flags needed).
 
-4. Optional email worker:
+3. Optional email worker:
 ```bash
 make local-notifier-up
 ```
-Requires `notifier_service/.env` with Mailgun credentials (`MAILGUN_API_KEY`,
+Requires `worker/.env` with Mailgun credentials (`MAILGUN_API_KEY`,
 `MAILGUN_DOMAIN`, `MAILGUN_FROM_EMAIL`) and `NOTIFICATIONS_OWNER_EMAIL`.
 Without credentials, use Docker with the sample env instead:
 ```bash
@@ -88,7 +78,7 @@ make docker-notifier-up
 ## Port Assignments
 
 All host-side port defaults live in `ports.env` at the repo root. The Makefile
-includes and exports them so every submodule compose file and local-dev target
+includes and exports them so every service compose file and local-dev target
 picks them up automatically. Override any value inline:
 
 ```bash
@@ -113,14 +103,14 @@ make docker-down
 make docker-clean
 ```
 
-### Frontend (portfolio-frontend)
+### Frontend (portfolio_frontend)
 
 ```bash
 make docker-frontend-{up,down,clean}
 make local-frontend-{up,down,clean}
 ```
 
-### BFF API (portfolio-bff)
+### BFF API (portfolio_bff)
 
 ```bash
 make docker-bff-{up,down,clean}
@@ -134,7 +124,7 @@ make local-bff-up-seed
 make local-bff-superuser
 ```
 
-### BFF Admin UI (portfolio-bff)
+### BFF Admin UI (portfolio_bff)
 
 ```bash
 make docker-admin-ui-{up,down,clean}
@@ -143,14 +133,14 @@ make local-admin-ui-{up,down,clean}
 
 Port reservation: `3001` is reserved for the BFF admin UI.
 
-### BFF Kafka Consumer (portfolio-bff)
+### BFF Kafka Consumer (portfolio_bff)
 
 ```bash
 make docker-bff-consumer-{up,down,clean}
 make local-bff-consumer-{up,down,clean}
 ```
 
-### Calendar API (portfolio-calendar)
+### Calendar API (portfolio_calendar)
 
 ```bash
 make docker-calendar-{up,down,clean}
@@ -164,20 +154,20 @@ make docker-kafka-{up,down,clean}
 make docker-db-{up,down,clean}
 ```
 
-### Notifier Worker (notifier_service)
+### Notifier Worker (worker)
 
 ```bash
 make docker-notifier-{up,down,clean}
 make local-notifier-{up,down,clean}
 ```
 
-`local-notifier-up` loads `notifier_service/.env` automatically and sets
+`local-notifier-up` loads `worker/.env` automatically and sets
 `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`.
 
 ### Utilities
 
 ```bash
-make status    # git status across all submodules
+make status    # git status -sb on the monorepo
 make nuke      # full teardown (requires NUKE=1)
 ```
 
